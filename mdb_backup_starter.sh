@@ -67,10 +67,20 @@ else
 fi
 
 echo "[2.2] Создаем бэкап"
-mongodump --gzip --archive=$BACKUP_STORAGE.gz 
+mongodump --gzip --out=$BACKUP_STORAGE 
 if [ $? -eq 0 ]; then
     echo "[2.2.+] Резервная копия успешно создана!";
+    echo "[2.3] Архивируем бэкап"
+    cd $BACKUP_STORAGE
+    tar -czf ../$CDate.tar.gz .
+    if [ $? -eq 0 ]; then
+        echo "[2.3.+] Архивирование успешно завершено!"
+    else
+        echo "[2.3.-] Во время архивирования возникли ошибки! Проверьте наличие свободного места в каталоге $BACKUP_STORAGE !"
+    fi
+    cd $CWDir
 else
     echo "[2.2.-] Во время создания резервной копии возникли ошибки!"
+    cd $CWDir
     exit
 fi

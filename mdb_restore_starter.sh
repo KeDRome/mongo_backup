@@ -29,15 +29,33 @@ if [[ $BACKUP_STORAGE == "d" ]]; then
     check_storage
 else
     echo "[0.1] Выбрано хранилище $BACKUP_STORAGE"
-    BACKUP_STORAGE=$BACKUP_STORAGE/$WDate.gz
+    BACKUP_STORAGE=$BACKUP_STORAGE/$WDate.tar.gz
     check_storage
 fi    
 
 echo "[1.0] Восстановление.."
-mongorestore --nsInclude --gzip --drop --archive=$BACKUP_STORAGE
+echo "[1.1] Создания каталога для извлечения архива ${BACKUP_STORAGE::-7}"
+mkdir -p ${BACKUP_STORAGE::-7}
 if [ $? -eq 0 ]; then
-    echo "[1.1.+] Восстановление успешно выполнено!";
+    echo "[1.1.+] Каталог создан успешно!" 
 else
-    echo "[1.1.-] Во время восстановления возникли ошибки!"
+    echo "[1.1.-] Каталог не был создан! Вы root?"
+    exit
+fi 
+echo "[1.2] Извлечение архива в ${BACKUP_STORAGE::-7}"
+tar -xf $BACKUP_STORAGE -C $(echo ${BACKUP_STORAGE::-7}) 
+if [ $? -eq 0 ]; then
+    echo "[1.2.+] Извлечение успешно завершено!" 
+else 
+    echo "[1.2.-] Во время извлечения возникли ошибки! Проверьте, что во время транспортировки архива он не был поврежден!"
+    exit
+fi
+BACKUP_STORAGE=${BACKUP_STORAGE::-7}
+echo "[1.3] Восстановление из каталога $BACKUP_STORAGE.."
+mongorestore --gzip --drop --dir=$BACKUP_STORAGE
+if [ $? -eq 0 ]; then
+    echo "[1.3.+] Восстановление успешно выполнено!";
+else
+    echo "[1.3.-] Во время восстановления возникли ошибки!"
     exit
 fi
